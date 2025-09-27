@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:house_pin/services/auth_service.dart';
 import 'package:house_pin/widgets/auth_text_field.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -12,15 +13,35 @@ class SignInScreen extends StatefulWidget {
 
 class _SignInScreenState extends State<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
+
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   String? _errorMessage;
 
-  void _signIn() {
-    // TODO: auth
-    context.go('/home');
+  void _signIn() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await _authService.signIn(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (!mounted) return;
+      context.go('/home');
+    } catch (e) {
+      setState(() => _errorMessage = e.toString());
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   bool _isMobileView(BuildContext context) {

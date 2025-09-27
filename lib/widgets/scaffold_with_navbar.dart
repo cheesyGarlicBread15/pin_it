@@ -1,5 +1,6 @@
 import 'package:house_pin/screens/main_nav/home_screen.dart';
 import 'package:house_pin/screens/main_nav/map_screen.dart';
+import 'package:house_pin/screens/main_nav/profile_screen.dart';
 import 'package:house_pin/utils/responsive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +18,7 @@ class ScaffoldWithNavbar extends StatelessWidget {
   int get _selectedIndex {
     if (location.startsWith('/home')) return 0;
     if (location.startsWith('/map')) return 1;
+    if (location.startsWith('/profile')) return 2;
     return 0;
   }
 
@@ -55,6 +57,11 @@ class ScaffoldWithNavbar extends StatelessWidget {
             selectedIcon: Icon(Icons.map_rounded, color: colorScheme.primary),
             label: 'Map',
           ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline, color: colorScheme.onSurfaceVariant),
+            selectedIcon: Icon(Icons.person, color: colorScheme.primary),
+            label: 'Profile',
+          ),
         ],
       ),
     );
@@ -86,6 +93,11 @@ class ScaffoldWithNavbar extends StatelessWidget {
                 icon: Icon(Icons.map_outlined),
                 selectedIcon: Icon(Icons.map_rounded),
                 label: Text('Map'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person),
+                label: Text('Profile'),
               ),
             ],
             leading: Padding(
@@ -121,7 +133,7 @@ class ScaffoldWithNavbar extends StatelessWidget {
           Expanded(
             child: IndexedStack(
               index: _selectedIndex,
-              children: const [HomeScreen(), MapScreen()],
+              children: const [HomeScreen(), MapScreen(), ProfileScreen()],
             ),
           ),
         ],
@@ -136,6 +148,9 @@ class ScaffoldWithNavbar extends StatelessWidget {
         break;
       case 1:
         context.go('/map');
+        break;
+      case 2:
+        context.go('/profile');
         break;
     }
   }

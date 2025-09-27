@@ -1,6 +1,8 @@
+import 'package:go_router/go_router.dart';
 import 'package:house_pin/widgets/auth_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:house_pin/services/auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -11,6 +13,11 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
+
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _ageController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -28,6 +35,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _signUp() async {
+    
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -36,8 +44,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
 
     try {
-      // TODO: firebase auth
+      await _authService.signUp(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        age: int.parse(_ageController.text.trim()),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        passwordConfirmation: _confirmPasswordController.text,
+      );
 
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created successfully. Please sign in.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      context.pop();
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to sign up: ${e.toString()}';
@@ -64,18 +87,61 @@ class _SignUpScreenState extends State<SignUpScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-
           // title
           Text(
             'Sign Up',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: isMobile ? 28 : 36,
-                  color: colorScheme.primary,
-                ),
+              fontWeight: FontWeight.bold,
+              fontSize: isMobile ? 28 : 36,
+              color: colorScheme.primary,
+            ),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: isMobile ? 20 : 32),
+
+          // first name field
+          AuthTextField(
+            controller: _firstNameController,
+            labelText: 'First Name',
+            hintText: 'Enter your first name',
+            keyboardType: TextInputType.name,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'First name is required';
+              }
+              return null;
+            },
+          ),
+
+          // last name field
+          AuthTextField(
+            controller: _lastNameController,
+            labelText: 'Last Name',
+            hintText: 'Enter your last name',
+            keyboardType: TextInputType.name,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Last name is required';
+              }
+              return null;
+            },
+          ),
+
+          AuthTextField(
+            controller: _ageController,
+            labelText: 'Age',
+            hintText: 'Enter your age',
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Age is required';
+              }
+              final age = int.tryParse(value);
+              if (age == null || age <= 0) {
+                return 'Enter a valid age';
+              }
+              return null;
+            },
+          ),
 
           // email field
           AuthTextField(
@@ -87,14 +153,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
               if (value == null || value.isEmpty) {
                 return 'Email is required';
               }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                  .hasMatch(value)) {
+              if (!RegExp(
+                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+              ).hasMatch(value)) {
                 return 'Enter a valid email';
               }
               return null;
             },
           ),
-          SizedBox(height: isMobile ? 16 : 20),
 
           // password field
           AuthTextField(
@@ -113,9 +179,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             },
             suffixIcon: IconButton(
               icon: Icon(
-                _isPasswordVisible
-                    ? Icons.visibility_off
-                    : Icons.visibility,
+                _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
                 color: colorScheme.primary,
               ),
               onPressed: () {
@@ -125,7 +189,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
               },
             ),
           ),
-          SizedBox(height: isMobile ? 16 : 20),
 
           // confirm password field
           AuthTextField(
@@ -160,9 +223,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           // error message
           if (_errorMessage != null)
             Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: isMobile ? 12.0 : 16.0,
-              ),
+              padding: EdgeInsets.symmetric(vertical: isMobile ? 12.0 : 16.0),
               child: Container(
                 padding: EdgeInsets.all(isMobile ? 16 : 20),
                 decoration: BoxDecoration(
@@ -179,16 +240,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
             ),
-
-          SizedBox(height: isMobile ? 24 : 32),
+          SizedBox(height: isMobile ? 16 : 20),
 
           // sign up button
           ElevatedButton(
             onPressed: _isLoading ? null : _signUp,
             style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.symmetric(
-                vertical: isMobile ? 16 : 24,
-              ),
+              padding: EdgeInsets.symmetric(vertical: isMobile ? 16 : 24),
               backgroundColor: colorScheme.primary,
               foregroundColor: colorScheme.onPrimary,
               textStyle: TextStyle(
@@ -212,8 +270,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   )
                 : const Text('Sign Up'),
           ),
-
-          SizedBox(height: isMobile ? 16 : 24),
 
           // sign in link
           Row(
@@ -268,10 +324,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SvgPicture.asset(
-                        'assets/images/signup.svg',
-                        height: 160,
-                      ),
+                      SvgPicture.asset('assets/images/signup.svg', height: 160),
                       const SizedBox(height: 24),
                       _buildForm(true),
                     ],
@@ -284,9 +337,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       flex: 4,
                       child: Container(
                         constraints: const BoxConstraints(maxWidth: 400),
-                        child: SingleChildScrollView(
-                          child: _buildForm(false),
-                        ),
+                        child: SingleChildScrollView(child: _buildForm(false)),
                       ),
                     ),
 
@@ -307,9 +358,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             const SizedBox(height: 24),
                             Text(
                               'Join the Journey!',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineLarge
+                              style: Theme.of(context).textTheme.headlineLarge
                                   ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.primary,
@@ -319,9 +368,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             const SizedBox(height: 12),
                             Text(
                               'Start your safety adventure with your community',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
+                              style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
