@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:house_pin/router/app_router.dart';
 
 void main() {
@@ -25,12 +26,17 @@ class MainApp extends StatelessWidget {
 
     final ThemeData lightTheme =
         ThemeData.from(colorScheme: lightScheme, useMaterial3: true).copyWith(
+          textTheme: GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme)
+              .apply(
+                bodyColor: lightScheme.onSurface,
+                displayColor: lightScheme.onSurface,
+              ),
           scaffoldBackgroundColor: lightScheme.background,
           appBarTheme: AppBarTheme(
             backgroundColor: lightScheme.surface,
             foregroundColor: lightScheme.onSurface,
             elevation: 0,
-            titleTextStyle: TextStyle(
+            titleTextStyle: GoogleFonts.poppins(
               color: lightScheme.onSurface,
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -45,7 +51,7 @@ class MainApp extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              textStyle: const TextStyle(
+              textStyle: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
@@ -66,17 +72,24 @@ class MainApp extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: lightScheme.primary, width: 1.5),
             ),
+            labelStyle: GoogleFonts.poppins(),
+            hintStyle: GoogleFonts.poppins(),
           ),
         );
 
     final ThemeData darkTheme =
         ThemeData.from(colorScheme: darkScheme, useMaterial3: true).copyWith(
+          textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme)
+              .apply(
+                bodyColor: darkScheme.onSurface,
+                displayColor: darkScheme.onSurface,
+              ),
           scaffoldBackgroundColor: darkScheme.background,
           appBarTheme: AppBarTheme(
             backgroundColor: darkScheme.surface,
             foregroundColor: darkScheme.onSurface,
             elevation: 0,
-            titleTextStyle: TextStyle(
+            titleTextStyle: GoogleFonts.poppins(
               color: darkScheme.onSurface,
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -91,7 +104,7 @@ class MainApp extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              textStyle: const TextStyle(
+              textStyle: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
@@ -112,6 +125,8 @@ class MainApp extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: darkScheme.primary, width: 1.5),
             ),
+            labelStyle: GoogleFonts.poppins(),
+            hintStyle: GoogleFonts.poppins(),
           ),
         );
 

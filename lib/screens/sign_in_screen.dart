@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:house_pin/widgets/auth_text_field.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -23,12 +22,118 @@ class _SignInScreenState extends State<SignInScreen> {
     context.go('/home');
   }
 
+  // responsive breakpoints
   bool _isMobileView(BuildContext context) {
-    return MediaQuery.of(context).size.width < 480;
+    return MediaQuery.of(context).size.width < 768;
   }
 
-  Widget _buildForm(bool isMobile) {
+  bool _isTabletView(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return width >= 768 && width < 1024;
+  }
+
+  bool _isDesktopView(BuildContext context) {
+    return MediaQuery.of(context).size.width >= 1024;
+  }
+
+  // get dimensions
+  double _getImageHeight(BuildContext context) {
+    if (_isMobileView(context)) return 200;
+    if (_isTabletView(context)) return 280;
+    return 400;
+  }
+
+  double _getTitleFontSize(BuildContext context) {
+    if (_isMobileView(context)) return 24;
+    if (_isTabletView(context)) return 28;
+    return 32;
+  }
+
+  double _getVerticalSpacing(BuildContext context, {bool large = false}) {
+    final base = large ? 24 : 16;
+    if (_isMobileView(context)) return base * 1.0;
+    if (_isTabletView(context)) return base * 1.2;
+    return base * 1.5;
+  }
+
+  double _getHorizontalPadding(BuildContext context) {
+    if (_isMobileView(context)) return 32;
+    if (_isTabletView(context)) return 48;
+    return 64;
+  }
+
+  Widget _buildModernTextField({
+    required TextEditingController controller,
+    required String labelText,
+    required String hintText,
+    TextInputType? keyboardType,
+    bool obscureText = false,
+    String? Function(String?)? validator,
+    Widget? suffixIcon,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          labelText,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          validator: validator,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Colors.black,
+          ),
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 16),
+            suffixIcon: suffixIcon,
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: colorScheme.error, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: colorScheme.error, width: 2),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildForm(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isMobile = _isMobileView(context);
 
     return Form(
       key: _formKey,
@@ -36,20 +141,31 @@ class _SignInScreenState extends State<SignInScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Sign In',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            'Pin It',
+            style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: isMobile ? 28 : 36,
-              color: colorScheme.primary,
+              fontSize: _getTitleFontSize(context),
+              color: Colors.black,
+              letterSpacing: -0.5,
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: isMobile ? 24 : 32),
+          const SizedBox(height: 8),
+          Text(
+            'Pin your house and stay safe!',
+            style: TextStyle(
+              fontSize: isMobile ? 14 : 16,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w400,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: _getVerticalSpacing(context, large: true) * 1.5),
 
-          // email
-          AuthTextField(
+          // email field
+          _buildModernTextField(
             controller: _emailController,
-            labelText: 'Email',
+            labelText: 'Your email address',
             hintText: 'Enter your email',
             keyboardType: TextInputType.emailAddress,
             validator: (v) {
@@ -60,12 +176,12 @@ class _SignInScreenState extends State<SignInScreen> {
               return null;
             },
           ),
-          SizedBox(height: isMobile ? 16 : 24),
+          SizedBox(height: _getVerticalSpacing(context)),
 
-          // password
-          AuthTextField(
+          // password field
+          _buildModernTextField(
             controller: _passwordController,
-            labelText: 'Password',
+            labelText: 'Choose a password',
             hintText: 'Enter your password',
             obscureText: !_isPasswordVisible,
             validator: (v) =>
@@ -73,7 +189,8 @@ class _SignInScreenState extends State<SignInScreen> {
             suffixIcon: IconButton(
               icon: Icon(
                 _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
-                color: colorScheme.primary,
+                color: Colors.grey.shade400,
+                size: 20,
               ),
               onPressed: () => setState(() {
                 _isPasswordVisible = !_isPasswordVisible;
@@ -81,9 +198,12 @@ class _SignInScreenState extends State<SignInScreen> {
             ),
           ),
 
+          //error
           if (_errorMessage != null)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: EdgeInsets.symmetric(
+                vertical: _getVerticalSpacing(context),
+              ),
               child: Container(
                 padding: EdgeInsets.all(isMobile ? 16 : 20),
                 decoration: BoxDecoration(
@@ -98,39 +218,67 @@ class _SignInScreenState extends State<SignInScreen> {
               ),
             ),
 
-          SizedBox(height: isMobile ? 24 : 32),
+          SizedBox(height: _getVerticalSpacing(context, large: true)),
 
           // sign in button
-          ElevatedButton(
-            onPressed: _isLoading ? null : _signIn,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
-              padding: EdgeInsets.symmetric(vertical: isMobile ? 16 : 24),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _signIn,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4BDF7F),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
               ),
-              textStyle: TextStyle(
-                fontSize: isMobile ? 16 : 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            child: _isLoading
-                ? SizedBox(
-                    height: isMobile ? 20 : 24,
-                    width: isMobile ? 20 : 24,
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        colorScheme.onPrimary,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        strokeWidth: 2,
                       ),
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Text('Sign In'),
+                    )
+                  : const Text('Continue'),
+            ),
           ),
 
-          SizedBox(height: isMobile ? 16 : 24),
+          SizedBox(height: _getVerticalSpacing(context, large: true)),
 
+          Row(
+            children: [
+              Expanded(
+                child: Container(height: 1, color: Colors.grey.shade300),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'or',
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(height: 1, color: Colors.grey.shade300),
+              ),
+            ],
+          ),
+
+          SizedBox(height: _getVerticalSpacing(context, large: true)),
+
+          // sign up
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -138,13 +286,17 @@ class _SignInScreenState extends State<SignInScreen> {
                 "Don't have an account?",
                 style: TextStyle(
                   fontSize: isMobile ? 14 : 16,
-                  color: colorScheme.onSurfaceVariant,
+                  color: Colors.grey.shade600,
                 ),
               ),
               TextButton(
                 onPressed: () => context.push('/signup'),
                 style: TextButton.styleFrom(
-                  foregroundColor: colorScheme.tertiary,
+                  foregroundColor: const Color(0xFF4BDF7F),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                 ),
                 child: Text(
                   'Sign Up',
@@ -161,73 +313,349 @@ class _SignInScreenState extends State<SignInScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isMobile = _isMobileView(context);
+  // mobile
+  Widget _buildMobileLayout(BuildContext context) {
+    return Column(
+      children: [
+        // header
+        RoundedHeaderWidget(
+          height: _getImageHeight(context),
+          backgroundColor: const Color(0xFF101B30),
+          borderRadius: 80,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4BDF7F),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.location_pin,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'House Pin',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // forms
+        Expanded(
+          child: Container(
+            color: Colors.white,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: _getHorizontalPadding(context),
+                vertical: 32,
+              ),
+              child: _buildForm(context),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // desktop
+  Widget _buildDesktopLayout(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      body: Center(
+    return Container(
+      color: Colors.white,
+      child: Center(
         child: Container(
-          constraints: BoxConstraints(
-            maxWidth: isMobile ? double.infinity : 1000,
-          ),
+          constraints: const BoxConstraints(maxWidth: 1200),
           padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 24 : 48,
-            vertical: 32,
+            horizontal: _getHorizontalPadding(context),
+            vertical: 48,
           ),
-          child: isMobile
-              ? SingleChildScrollView(
-                  child: Column(
+          child: Row(
+            children: [
+              // left side
+              Expanded(
+                flex: _isDesktopView(context) ? 5 : 4,
+                child: Container(
+                  height: 600,
+                  child: Stack(
                     children: [
-                      SvgPicture.asset('assets/images/signin.svg', height: 180),
-                      const SizedBox(height: 32),
-                      _buildForm(true),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              const Color(0xFF101B30),
+                              const Color(0xFF101B30).withOpacity(0.9),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      // Content
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF4BDF7F),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.location_pin,
+                                    color: Colors.white,
+                                    size: 30,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            const Text(
+                              'House Pin',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontSize: 36,
+                                letterSpacing: -0.5,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                )
-              : Row(
-                  children: [
-                    // left side - graphics
-                    Expanded(
-                      flex: 5,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SvgPicture.asset(
-                            'assets/images/signin.svg',
-                            height: 400,
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Welcome Back!',
-                            style: Theme.of(context).textTheme.headlineLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.primary,
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Engage with your community and explore safely',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(color: colorScheme.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 48),
-                    // right side - form
-                    Expanded(
-                      flex: 4,
-                      child: Container(
-                        constraints: const BoxConstraints(maxWidth: 400),
-                        child: SingleChildScrollView(child: _buildForm(false)),
-                      ),
-                    ),
-                  ],
                 ),
+              ),
+
+              SizedBox(width: _isDesktopView(context) ? 64 : 48),
+
+              // right side (form)
+              Expanded(
+                flex: _isDesktopView(context) ? 4 : 5,
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 450),
+                  child: SingleChildScrollView(
+                    child: Container(
+                      padding: EdgeInsets.all(
+                        _isDesktopView(context) ? 48 : 40,
+                      ),
+                      child: _buildForm(context),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTabletLayout(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: _getHorizontalPadding(context),
+            vertical: 32,
+          ),
+          child: Column(
+            children: [
+              //header
+              RoundedHeaderWidget(
+                height: _getImageHeight(context),
+                backgroundColor: const Color(0xFF101B30),
+                borderRadius: 35,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 90,
+                        height: 90,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 45,
+                            height: 45,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF4BDF7F),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.location_pin,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'House Pin',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 28,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              SizedBox(height: _getVerticalSpacing(context, large: true)),
+
+              Container(
+                constraints: const BoxConstraints(maxWidth: 500),
+                padding: const EdgeInsets.all(40),
+                child: _buildForm(context),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (_isMobileView(context)) {
+            return _buildMobileLayout(context);
+          } else if (_isTabletView(context)) {
+            return _buildTabletLayout(context);
+          } else {
+            return _buildDesktopLayout(context);
+          }
+        },
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+}
+
+// cutomization
+class RoundedBottomClipper extends CustomClipper<Path> {
+  final double borderRadius;
+
+  RoundedBottomClipper({this.borderRadius = 30});
+
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+
+    path.moveTo(0, 0);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height - borderRadius);
+    path.arcToPoint(
+      Offset(size.width - borderRadius, size.height),
+      radius: Radius.circular(borderRadius),
+      clockwise: true,
+    );
+
+    path.lineTo(borderRadius, size.height);
+
+    path.arcToPoint(
+      Offset(0, size.height - borderRadius),
+      radius: Radius.circular(borderRadius),
+      clockwise: true,
+    );
+
+    path.lineTo(0, 0);
+
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+// Rounded header widget
+class RoundedHeaderWidget extends StatelessWidget {
+  final double height;
+  final Widget? child;
+  final Color? backgroundColor;
+  final double borderRadius;
+
+  const RoundedHeaderWidget({
+    super.key,
+    this.height = 300,
+    this.child,
+    this.backgroundColor,
+    this.borderRadius = 30,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipPath(
+      clipper: RoundedBottomClipper(borderRadius: borderRadius),
+      child: Container(
+        height: height,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              backgroundColor ?? const Color(0xFF101B30),
+              backgroundColor?.withOpacity(0.9) ??
+                  const Color(0xFF101B30).withOpacity(0.9),
+            ],
+          ),
+        ),
+        child: SafeArea(child: child ?? const SizedBox.shrink()),
       ),
     );
   }
