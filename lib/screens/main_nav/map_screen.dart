@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -18,8 +19,14 @@ class _MapScreenState extends State<MapScreen> {
   bool showRadar = false;
 
   List<Marker> earthquakeMarkers = [];
-  String? radarTimestamp; // latest RainViewer timestamp
+  List<int> radarFrames = [];
+  int currentFrameIndex = 0;
+  Timer? radarTimer;
 
+  // Smooth fade control
+  bool showFirstLayer = true;
+
+  /// Fetch earthquakes from USGS
   Future<void> _fetchEarthquakes() async {
     const url =
         "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=4.5&maxlatitude=21.0&minlongitude=116.0&maxlongitude=127.0&orderby=time";
@@ -46,82 +53,158 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  Future<void> _fetchRadarTimestamps() async {
+  /// Fetch RainViewer radar frames
+  Future<void> _fetchRadarFrames() async {
     const url = "https://tilecache.rainviewer.com/api/maps.json";
     final res = await http.get(Uri.parse(url));
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
       if (data is List && data.isNotEmpty) {
         setState(() {
-          radarTimestamp = data.last.toString(); // use the latest frame
+          radarFrames = List<int>.from(data);
+          currentFrameIndex = 0;
         });
+        _startRadarAnimation();
       }
     }
+  }
+
+  /// Start radar animation with crossfade
+  void _startRadarAnimation() {
+    radarTimer?.cancel();
+    radarTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() {
+        currentFrameIndex = (currentFrameIndex + 1) % radarFrames.length;
+        showFirstLayer = !showFirstLayer; // toggle layer for smooth fade
+      });
+    });
   }
 
   @override
   void initState() {
     super.initState();
     _fetchEarthquakes();
-    _fetchRadarTimestamps();
+    _fetchRadarFrames();
+  }
+
+  @override
+  void dispose() {
+    radarTimer?.cancel();
+    super.dispose();
+  }
+
+  Widget _buildToggleButton({
+    required String label,
+    required bool value,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: value ? Colors.blueAccent : Colors.white70,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 4,
+              offset: const Offset(2, 2),
+            ),
+          ],
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: value ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("OSM Map with RainViewer Radar"),
-        actions: [
-          Row(
+      body: Stack(
+        children: [
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: const LatLng(14.5995, 120.9842), // Manila
+              initialZoom: 5,
+              minZoom: 3,
+              maxZoom: 12,
+            ),
             children: [
-              Checkbox(
-                value: showEarthquakes,
-                onChanged: (val) {
-                  setState(() => showEarthquakes = val!);
-                  if (val!) _fetchEarthquakes();
-                },
+              // Base map
+              TileLayer(
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                subdomains: const ['a', 'b', 'c'],
               ),
-              const Text("Earthquakes"),
-              Checkbox(
-                value: showRadar,
-                onChanged: (val) {
-                  setState(() => showRadar = val!);
-                  if (val!) _fetchRadarTimestamps();
-                },
-              ),
-              const Text("Radar"),
+
+              // Radar overlay with smooth crossfade
+              if (showRadar && radarFrames.isNotEmpty)
+                Stack(
+                  children: [
+                    AnimatedOpacity(
+                      opacity: showFirstLayer ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 800),
+                      child: TileLayer(
+                        urlTemplate:
+                            "https://tilecache.rainviewer.com/v2/radar/${radarFrames[currentFrameIndex]}/256/{z}/{x}/{y}/2/1_1.png",
+                        maxNativeZoom: 12,
+                        maxZoom: 12,
+                      ),
+                    ),
+                    AnimatedOpacity(
+                      opacity: showFirstLayer ? 0.0 : 1.0,
+                      duration: const Duration(milliseconds: 800),
+                      child: TileLayer(
+                        urlTemplate:
+                            "https://tilecache.rainviewer.com/v2/radar/${radarFrames[currentFrameIndex]}/256/{z}/{x}/{y}/2/1_1.png",
+                        maxNativeZoom: 12,
+                        maxZoom: 12,
+                      ),
+                    ),
+                  ],
+                ),
+
+              // Earthquake markers
+              if (showEarthquakes) MarkerLayer(markers: earthquakeMarkers),
             ],
           ),
-        ],
-      ),
-      body: FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(
-          initialCenter: const LatLng(14.5995, 120.9842), // Manila
-          initialZoom: 5,
-        ),
-        children: [
-          // Base map
-          TileLayer(
-            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            subdomains: const ['a', 'b', 'c'],
-          ),
 
-          // RainViewer Radar Overlay
-          if (showRadar && radarTimestamp != null)
-            Opacity(
-              opacity: 0.6,
-              child: TileLayer(
-                urlTemplate:
-                    "https://tilecache.rainviewer.com/v2/radar/$radarTimestamp/256/{z}/{x}/{y}/2/1_1.png",
-                userAgentPackageName: "com.example.house_pin",
-                maxNativeZoom: 12,
-                maxZoom: 12,
-              ),
+          // Bottom-right toggle buttons
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _buildToggleButton(
+                  label: "Earthquakes",
+                  value: showEarthquakes,
+                  onTap: () {
+                    setState(() => showEarthquakes = !showEarthquakes);
+                    if (showEarthquakes) _fetchEarthquakes();
+                  },
+                ),
+                _buildToggleButton(
+                  label: "Radar",
+                  value: showRadar,
+                  onTap: () {
+                    setState(() => showRadar = !showRadar);
+                    if (showRadar && radarFrames.isEmpty) _fetchRadarFrames();
+                  },
+                ),
+              ],
             ),
-
-          // Earthquake markers
-          if (showEarthquakes) MarkerLayer(markers: earthquakeMarkers),
+          ),
         ],
       ),
     );
