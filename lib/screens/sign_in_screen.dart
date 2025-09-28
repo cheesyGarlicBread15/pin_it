@@ -622,7 +622,7 @@ class RoundedBottomClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
-// Rounded header widget
+// header rounded (custominzation)
 class RoundedHeaderWidget extends StatelessWidget {
   final double height;
   final Widget? child;
