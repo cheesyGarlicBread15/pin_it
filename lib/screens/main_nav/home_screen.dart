@@ -10,6 +10,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('data'),);
+    return Center(child: Text('dashboarding and metrics'),);
   }
 }

@@ -56,48 +56,116 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       }
-
-      return;
     }
+  }
+
+  Widget _buildProfileItem({required String label, required String value}) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Text(
+              "$label: ",
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+            Expanded(
+              child: Text(
+                value,
+                style: const TextStyle(fontSize: 16, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Profile")),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-          ? Center(
-              child: Text(
-                _errorMessage!,
-                style: const TextStyle(color: Colors.red),
-              ),
-            )
-          : _userData == null
-          ? const Center(child: Text("No profile data found"))
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _errorMessage != null
+            ? Center(
+                child: Text(
+                  _errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              )
+            : _userData == null
+            ? const Center(child: Text("No profile data found"))
+            : Stack(
                 children: [
-                  Text(
-                    "First Name: ${_userData!['firstName'] ?? ''}",
-                    style: const TextStyle(fontSize: 18),
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 24,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: CircleAvatar(
+                            radius: isPortrait ? 50 : 40,
+                            backgroundColor: Colors.blueAccent,
+                            child: Text(
+                              "${_userData!['firstName']?[0] ?? ''}${_userData!['lastName']?[0] ?? ''}"
+                                  .toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 32,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _buildProfileItem(
+                          label: "First Name",
+                          value: _userData!['firstName'] ?? '',
+                        ),
+                        _buildProfileItem(
+                          label: "Last Name",
+                          value: _userData!['lastName'] ?? '',
+                        ),
+                        _buildProfileItem(
+                          label: "Age",
+                          value: "${_userData!['age'] ?? 'Not provided'}",
+                        ),
+                        _buildProfileItem(
+                          label: "Email",
+                          value: _userData!['email'] ?? '',
+                        ),
+                        const SizedBox(height: 80),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Last Name: ${_userData!['lastName'] ?? ''}",
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _logout,
-                    child: const Text("Logout"),
+                  Positioned(
+                    bottom: 24,
+                    right: 16,
+                    child: FloatingActionButton.extended(
+                      onPressed: _logout,
+                      icon: const Icon(Icons.logout),
+                      label: const Text("Logout"),
+                      backgroundColor: Colors.redAccent,
+                      elevation: 4,
+                    ),
                   ),
                 ],
               ),
-            ),
+      ),
     );
   }
 }

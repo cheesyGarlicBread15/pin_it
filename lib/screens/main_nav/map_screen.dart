@@ -195,7 +195,7 @@ class _MapScreenState extends State<MapScreen> {
                   },
                 ),
                 _buildToggleButton(
-                  label: "Radar",
+                  label: "Precipitation",
                   value: showRadar,
                   onTap: () {
                     setState(() => showRadar = !showRadar);
