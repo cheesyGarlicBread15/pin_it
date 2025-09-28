@@ -18,7 +18,9 @@ class _MapScreenState extends State<MapScreen> {
   bool showRadar = false;
 
   List<Marker> earthquakeMarkers = [];
-  String? radarTimestamp; // latest RainViewer timestamp
+
+  /// Replace with your OpenWeatherMap API key
+  final String owmApiKey = "b5af81eac9267d479f0627c797d05e69";
 
   Future<void> _fetchEarthquakes() async {
     const url =
@@ -46,31 +48,17 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  Future<void> _fetchRadarTimestamps() async {
-    const url = "https://tilecache.rainviewer.com/api/maps.json";
-    final res = await http.get(Uri.parse(url));
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      if (data is List && data.isNotEmpty) {
-        setState(() {
-          radarTimestamp = data.last.toString(); // use the latest frame
-        });
-      }
-    }
-  }
-
   @override
   void initState() {
     super.initState();
     _fetchEarthquakes();
-    _fetchRadarTimestamps();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("OSM Map with RainViewer Radar"),
+        title: const Text("OSM Map with OWM Precipitation"),
         actions: [
           Row(
             children: [
@@ -86,10 +74,9 @@ class _MapScreenState extends State<MapScreen> {
                 value: showRadar,
                 onChanged: (val) {
                   setState(() => showRadar = val!);
-                  if (val!) _fetchRadarTimestamps();
                 },
               ),
-              const Text("Radar"),
+              const Text("Precipitation"),
             ],
           ),
         ],
@@ -99,6 +86,8 @@ class _MapScreenState extends State<MapScreen> {
         options: MapOptions(
           initialCenter: const LatLng(14.5995, 120.9842), // Manila
           initialZoom: 5,
+          minZoom: 3,
+          maxZoom: 19,
         ),
         children: [
           // Base map
@@ -107,17 +96,13 @@ class _MapScreenState extends State<MapScreen> {
             subdomains: const ['a', 'b', 'c'],
           ),
 
-          // RainViewer Radar Overlay
-          if (showRadar && radarTimestamp != null)
-            Opacity(
-              opacity: 0.6,
-              child: TileLayer(
-                urlTemplate:
-                    "https://tilecache.rainviewer.com/v2/radar/$radarTimestamp/256/{z}/{x}/{y}/2/1_1.png",
-                userAgentPackageName: "com.example.house_pin",
-                maxNativeZoom: 12,
-                maxZoom: 12,
-              ),
+          // OpenWeatherMap precipitation overlay
+          if (showRadar)
+            TileLayer(
+              
+              urlTemplate:
+                  "https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=$owmApiKey",
+              maxZoom: 19,
             ),
 
           // Earthquake markers
